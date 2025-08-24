@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlobaCart | Premium Electronics & Fashion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --secondary: #f59e0b;
+            --accent: #10b981;
+            --dark: #1f2937;
+            --light: #f8fafc;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .product-card {
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px) rotate(1deg);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .cart-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-content {
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+        
+        .category-filter {
+            transition: all 0.3s ease;
+        }
+        
+        .category-filter.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .cart-item {
+            transition: all 0.3s ease;
+        }
+        
+        .cart-item.removing {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: var(--accent);
+            color: white;
+            border-radius: 8px;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-store text-blue-600 text-2xl"></i>
+                    <span class="text-xl font-bold text-gray-800">GlobaCart</span>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="hidden md:flex space-x-8">
+                    <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors">Home</a>
+                    <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors">Products</a>
+                    <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors">About</a>
+                    <a href="#" class="text-gray-600 hover:text-blue-600 transition-colors">Contact</a>
+                </div>
+
+                <!-- Cart and User -->
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <button id="cartBtn" class="p-2 text-gray-600 hover:text-blue-600 transition-colors">
+                            <i class="fas fa-shopping-cart text-xl"></i>
+                            <span id="cartCount" class="cart-badge">0</span>
+                        </button>
+                    </div>
+                    
+                    <div id="userSection">
+                        <button id="loginBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-user me-2"></i>Login
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <h1 class="text-5xl font-bold mb-6">Discover Premium Tech & Style</h1>
+            <h1 class="text-5xl font-bold mb-6">Trendy Picks, Smart Deals – Only on Goblacart</h1>
+            <p class="text-xl mb-8 opacity-90">Find the perfect gadgets and fashion items that match your lifestyle</p>
+            <button class="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors">
+                Shop Now <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-12">
+        <!-- Category Filters -->
+        <div class="flex flex-wrap gap-4 mb-8 justify-center">
+            <button class="category-filter active px-6 py-2 rounded-full border border-gray-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors" data-category="all">
+                All Products
+            </button>
+            <button class="category-filter px-6 py-2 rounded-full border border-gray-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors" data-category="electronics">
+                Electronics
+            </button>
+            <button class="category-filter px-6 py-2 rounded-full border border-gray-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors" data-category="clothing">
+                Clothing
+            </button>
+            <button class="category-filter px-6 py-2 rounded-full border border-gray-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors" data-category="accessories">
+                Accessories
+            </button>
+        </div>
+
+        <!-- Search and Sort -->
+        <div class="flex flex-col md:flex-row gap-4 mb-8 items-center justify-between">
+            <div class="relative flex-1 max-w-md">
+                <input type="text" placeholder="Search products..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+            </div>
+            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option>Price: Low to High</option>
+                <option>Price: High to Low</option>
+                <option>Name: A-Z</option>
+                <option>Name: Z-A</option>
+            </select>
+        </div>
+
+        <!-- Products Grid -->
+        <div id="productsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+            <!-- Products will be loaded here -->
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="flex justify-center items-center py-12">
+            <div class="loading-spinner"></div>
+        </div>
+    </main>
+
+    <!-- Product Modal -->
+    <div id="productModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 pointer-events-none">
+        <div class="modal-content bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h3 class="text-2xl font-bold">Product Details</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div id="modalContent" class="p-6">
+                <!-- Product details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div id="cartSidebar" class="fixed right-0 top-0 h-full w-96 bg-white shadow-xl transform translate-x-full transition-transform duration-300 z-50">
+        <div class="p-6 h-full flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold">Your Cart</h3>
+                <button id="closeCart" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            
+            <div id="cartItems" class="flex-1 overflow-y-auto mb-4">
+                <!-- Cart items will be loaded here -->
+            </div>
+            
+            <div class="border-t pt-4">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-lg font-semibold">Total:</span>
+                    <span id="cartTotal" class="text-xl font-bold text-blue-600">$0.00</span>
+                </div>
+                <button id="checkoutBtn" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    Proceed to Checkout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 opacity-0 pointer-events-none">
+        <div class="modal-content bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h3 class="text-2xl font-bold" id="authModalTitle">Login</h3>
+                <button id="closeAuthModal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="authForm">
+                    <div id="registerFields" class="hidden">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2">Full Name</label>
+                            <input type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your full name">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">Email</label>
+                        <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your email">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium mb-2">Password</label>
+                        <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your password">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors mb-4">
+                        Login
+                    </button>
+                    <p class="text-center text-sm text-gray-600">
+                        Don't have an account? 
+                        <button type="button" id="switchToRegister" class="text-blue-600 hover:underline">Register</button>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">GlobaCart</h4>
+                    <p class="text-gray-400">Premium electronics and fashion for the modern lifestyle.</p>
+                    <!-- <p class="text-gray-400">“Goblacart is your trusted online shopping destination, offering quality products, affordable prices, and fast delivery all in one place.”.</p> -->
+                    
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Shop</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Electronics</a></li>
+                        <li><a href="#" class="hover:text-white">Clothing</a></li>
+                        <li><a href="#" class="hover:text-white">Accessories</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-white">Shipping</a></li>
+                        <li><a href="#" class="hover:text-white">Returns</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold mb-4">Connect</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>© 2025 GlobaCart. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Sample product data
+        const products = [
+            {
+                id: 1,
+                name: "Noise Airwave Max 5 Wireless Headphone",
+                price: 199,
+                category: "electronics",
+                image: "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcRNkd_qE5AFt3WqS_Fqzixqlpc5m3BSYP7wVGAelXgic1dD0TWyEI3kfbBYhT_IaQo4GNCajVdGXlLFjvMuqqp-jxBpz86lp-FReCDNoxOpEeGN69AA-EuR",
+                alt: "Noise Airwave Max 5 Wireless Headphone Best and New",
+                description: "Experience crystal-clear audio with our noise airwave max 5 wireless headphone. Features active noise cancellation, 30-hour battery life, and premium comfort.",
+                rating: 4.8,
+                stock: 15
+            },
+            {
+                id: 2,
+                name: "Noise Colorfit Pro 5 Smart Watch 1.85 AMOLED Display, BT Calling, 5X Faster Data Transfer, Emergency SOS Tech (Starlight Gold)",
+                price: 299,
+                category: "electronics",
+                image: "https://m.media-amazon.com/images/I/618sHIqH+VL._SX522_.jpg",
+                alt: "Sleek smartwatch with health monitoring features on a wrist and New DIY Watch Faces, Smart Dock Design, Emergency SOS Tech, Emoji Support, 5X Faster Data Transfer, Instacharge?? ",
+                description: "Stay connected and track your health with our advanced smartwatch. Heart rate monitoring, GPS, and smartphone integration.",
+                rating: 4.6,
+                stock: 8
+            },
+            {
+                id: 3,
+                name: "Mens Designer Denim Jacket",
+                price: 89,
+                category: "clothing",
+                image: "https://5.imimg.com/data5/ANDROID/Default/2025/3/497822026/AG/YZ/UJ/243133318/product-jpeg-1000x1000.jpg",
+                alt: "Fashionable denim jacket with modern cut and distressed details",
+                description: "Elevate your style with this premium denim jacket. Perfect fit, sustainable materials, and timeless design.",
+                rating: 4.7,
+                stock: 20
+            },
+            {
+                id: 4,
+                name: "Saint Laurent Betty Chain Bag Leather Shoulder Handbag",
+                price: 699,
+                category: "accessories",
+                image: "https://i.ebayimg.com/images/g/TgcAAOSww3VnQ4Ip/s-l1600.webp",
+                alt: "Elegant leather crossbody bag with carbon black hardware and 1 big compartments",
+                description: "Carry your essentials in style with this genuine leather crossbody bag. Big compartments and adjustable strap chain.",
+                rating: 4.9,
+                stock: 12
+            },
+            {
+                id: 5,
+                name: "Dell 27 4k UHD USB-C Monitor S2722QC",
+                price: 499,
+                category: "electronics",
+                image: "https://i.dell.com/is/image/DellContent/content/dam/ss2/product-images/dell-client-products/peripherals/monitors/u-series/u4323qe/media-gallery/gray/monitor-u4323qe-gray-gallery-1.psd?qlt=90,0&op_usm=1.75,0.3,2,0&resMode=sharp&pscan=auto&fmt=png-alpha&hei=500",
+                alt: "Large 4K computer monitor with thin bezels and adjustable stand",
+                description: "Immerse yourself in stunning 4K resolution. Perfect for gaming, design work, and entertainment.",
+                rating: 4.5,
+                stock: 6
+            },
+            {
+                id: 6,
+                name: "Premium Yoga Mat",
+                price: 199,
+                category: "accessories",
+                image: "https://www.massyarias.com/wp-content/uploads/2021/06/massy_yogamat_2-768x513.jpg",
+                alt: "Eco-friendly yoga mat with non-slip surface and carrying strap",
+                description: "Perfect your practice with our eco-friendly yoga mat. Non-slip surface and extra cushioning for comfort.",
+                rating: 4.8,
+                stock: 25
+            },
+            {
+                id: 7,
+                name: "Men White Slim Fit Print Full Sleeves Casual Shirt",
+                price: 991,
+                category: "clothing",
+                image: "https://imagescdn.peterengland.com/img/app/product/3/39906799-19041678.jpg?auto=format&w=390",
+                alt: "Modern slim-fit button-down shirt in solid color with premium fabric",
+                description: "Versatile slim-fit shirt made from premium cotton. Perfect for casual and business casual occasions.",
+                rating: 4.4,
+                stock: 18
+            },
+            {
+                id: 8,
+                name: "JBL Vibe Beam 2 True Wireless Noise Cancelling Earbuds - JBLVBEAM2BLKAM",
+                price: 65,
+                category: "electronics",
+                image: "https://www.lrbrown.com/files/image/attachment/13418/preview_JBLVBEAM2BLKAM_1.jpg",
+                alt: "Compact wireless earbuds with charging case and noise isolation",
+                description: "True wireless earbuds with exceptional sound quality, noise isolation, and long battery life.",
+                rating: 4.7,
+                stock: 22
+            },
+            {
+                id: 9,
+                name: "Sugathari Women's Georgette Anarkali Floral Printed Kurta with Pant & Dupatta (Dress 113)",
+                price: 89,
+                category: "clothing",
+                image: "https://m.media-amazon.com/images/I/71tQau736AL._SY741_.jpg",
+                alt: "\"Step into timeless elegance with Sugathari’s Georgette Anarkali Set.Complete with kurta, pant, and dupatta – perfect for festive and party wear.\"",
+                description: "\"Step into timeless elegance with Sugathari’s Georgette Anarkali Set.Complete with kurta, pant, and dupatta – perfect for festive and party wear.\"",
+                rating: 4.7,
+                stock: 20
+            },
+            {
+                id: 10,
+                name: "iPhone 15 Pro Max A17 Pro chip (Titanium design)",
+                price: 1199,
+                category: "electronics",
+                image: "https://m.media-amazon.com/images/I/81Os1SDWpcL._SX679_.jpg",
+                alt: "iPhone 15 Pro Max in titanium finish with advanced camera system and large displaycase and noise isolation",
+                description: "The ultimate iPhone with titanium design, A17 Pro chip, and advanced camera system for professional-quality photos and videos.",
+                rating: 4.9,
+                stock: 10
+            },
+            {
+                id: 11,
+                name: "MacBook Air M2",
+                price: 999,
+                category: "electronics",
+                image: "https://m.media-amazon.com/images/I/719C6bJv8jL._SL1500_.jpg",
+                alt: "Compact wireless earbuds with charging case and noise isolation",
+                description: "Supercharged by the M2 chip, MacBook Air combines incredible performance with up to 18 hours of battery life in an ultra-portable design.",
+                rating: 4.7,
+                stock: 12
+            },
+            {
+                id: 12,
+                name: "JBL Vibe Beam 2 True Wireless Noise Cancelling Earbuds - JBLVBEAM2BLKAM",
+                price: 65,
+                category: "electronics",
+                image: "https://www.lrbrown.com/files/image/attachment/13418/preview_JBLVBEAM2BLKAM_1.jpg",
+                alt: "Compact wireless earbuds with charging case and noise isolation",
+                description: "True wireless earbuds with exceptional sound quality, noise isolation, and long battery life.",
+                rating: 4.7,
+                stock: 22
+            },
+            {
+                id: 8,
+                name: "JBL Vibe Beam 2 True Wireless Noise Cancelling Earbuds - JBLVBEAM2BLKAM",
+                price: 65,
+                category: "electronics",
+                image: "https://www.lrbrown.com/files/image/attachment/13418/preview_JBLVBEAM2BLKAM_1.jpg",
+                alt: "Compact wireless earbuds with charging case and noise isolation",
+                description: "True wireless earbuds with exceptional sound quality, noise isolation, and long battery life.",
+                rating: 4.7,
+                stock: 22
+            },
+            {
+                id: 8,
+                name: "JBL Vibe Beam 2 True Wireless Noise Cancelling Earbuds - JBLVBEAM2BLKAM",
+                price: 65,
+                category: "electronics",
+                image: "https://www.lrbrown.com/files/image/attachment/13418/preview_JBLVBEAM2BLKAM_1.jpg",
+                alt: "Compact wireless earbuds with charging case and noise isolation",
+                description: "True wireless earbuds with exceptional sound quality, noise isolation, and long battery life.",
+                rating: 4.7,
+                stock: 22
+            },
+            {
+                id: 8,
+                name: "JBL Vibe Beam 2 True Wireless Noise Cancelling Earbuds - JBLVBEAM2BLKAM",
+                price: 65,
+                category: "electronics",
+                image: "https://www.lrbrown.com/files/image/attachment/13418/preview_JBLVBEAM2BLKAM_1.jpg",
+                alt: "Compact wireless earbuds with charging case and noise isolation",
+                description: "True wireless earbuds with exceptional sound quality, noise isolation, and long battery life.",
+                rating: 4.7,
+                stock: 22
+            },
+            {
+                id: 8,
+                name: "JBL Vibe Beam 2 True Wireless Noise Cancelling Earbuds - JBLVBEAM2BLKAM",
+                price: 65,
+                category: "electronics",
+                image: "https://www.lrbrown.com/files/image/attachment/13418/preview_JBLVBEAM2BLKAM_1.jpg",
+                alt: "Compact wireless earbuds with charging case and noise isolation",
+                description: "True wireless earbuds with exceptional sound quality, noise isolation, and long battery life.",
+                rating: 4.7,
+                stock: 22
+            },
+            {
+                id: 8,
+                name: "JBL Vibe Beam 2 True Wireless Noise Cancelling Earbuds - JBLVBEAM2BLKAM",
+                price: 65,
+                category: "electronics",
+                image: "https://www.lrbrown.com/files/image/attachment/13418/preview_JBLVBEAM2BLKAM_1.jpg",
+                alt: "Compact wireless earbuds with charging case and noise isolation",
+                description: "True wireless earbuds with exceptional sound quality, noise isolation, and long battery life.",
+                rating: 4.7,
+                stock: 22
+            },
+            {
+                id: 8,
+                name: "JBL Vibe Beam 2 True Wireless Noise Cancelling Earbuds - JBLVBEAM2BLKAM",
+                price: 65,
+                category: "electronics",
+                image: "https://www.lrbrown.com/files/image/attachment/13418/preview_JBLVBEAM2BLKAM_1.jpg",
+                alt: "Compact wireless earbuds with charging case and noise isolation",
+                description: "True wireless earbuds with exceptional sound quality, noise isolation, and long battery life.",
+                rating: 4.7,
+                stock: 22
+            },
+            {
+                id: 8,
+                name: "JBL Vibe Beam 2 True Wireless Noise Cancelling Earbuds - JBLVBEAM2BLKAM",
+                price: 65,
+                category: "electronics",
+                image: "https://www.lrbrown.com/files/image/attachment/13418/preview_JBLVBEAM2BLKAM_1.jpg",
+                alt: "Compact wireless earbuds with charging case and noise isolation",
+                description: "True wireless earbuds with exceptional sound quality, noise isolation, and long battery life.",
+                rating: 4.7,
+                stock: 22
+            },
+            {
+                id: 8,
+                name: "JBL Vibe Beam 2 True Wireless Noise Cancelling Earbuds - JBLVBEAM2BLKAM",
+                price: 65,
+                category: "electronics",
+                image: "https://www.lrbrown.com/files/image/attachment/13418/preview_JBLVBEAM2BLKAM_1.jpg",
+                alt: "Compact wireless earbuds with charging case and noise isolation",
+                description: "True wireless earbuds with exceptional sound quality, noise isolation, and long battery life.",
+                rating: 4.7,
+                stock: 22
+            }
+        ];
+
+        // App State
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        let currentFilter = 'all';
+
+        // DOM Elements
+        const productsGrid = document.getElementById('productsGrid');
+        const cartCount = document.getElementById('cartCount');
+        const cartItems = document.getElementById('cartItems');
+        const cartTotal = document.getElementById('cartTotal');
+        const cartBtn = document.getElementById('cartBtn');
+        const cartSidebar = document.getElementById('cartSidebar');
+        const closeCart = document.getElementById('closeCart');
+        const productModal = document.getElementById('productModal');
+        const modalContent = document.getElementById('modalContent');
+        const closeModal = document.getElementById('closeModal');
+        const authModal = document.getElementById('authModal');
+        const authForm = document.getElementById('authForm');
+        const closeAuthModal = document.getElementById('closeAuthModal');
+        const loginBtn = document.getElementById('loginBtn');
+        const switchToRegister = document.getElementById('switchToRegister');
+        const authModalTitle = document.getElementById('authModalTitle');
+        const registerFields = document.getElementById('registerFields');
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        const toast = document.getElementById('toast');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const categoryFilters = document.querySelectorAll('.category-filter');
+
+        // Initialize App
+        function init() {
+            loadProducts();
+            updateCartCount();
+            checkUserStatus();
+            setupEventListeners();
+            simulateLoading();
+        }
+
+        // Simulate loading
+        function simulateLoading() {
+            setTimeout(() => {
+                loadingSpinner.classList.add('hidden');
+            }, 1500);
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            cartBtn.addEventListener('click', toggleCart);
+            closeCart.addEventListener('click', toggleCart);
+            closeModal.addEventListener('click', closeProductModal);
+            closeAuthModal.addEventListener('click', closeAuthModalHandler);
+            loginBtn.addEventListener('click', openAuthModal);
+            authForm.addEventListener('submit', handleAuthSubmit);
+            switchToRegister.addEventListener('click', toggleAuthMode);
+            checkoutBtn.addEventListener('click', handleCheckout);
+            
+            // Category filters
+            categoryFilters.forEach(filter => {
+                filter.addEventListener('click', () => {
+                    categoryFilters.forEach(f => f.classList.remove('active'));
+                    filter.classList.add('active');
+                    currentFilter = filter.dataset.category;
+                    filterProducts(currentFilter);
+                });
+            });
+        }
+
+        // Load products
+        function loadProducts() {
+            productsGrid.innerHTML = '';
+            const filteredProducts = currentFilter === 'all' 
+                ? products 
+                : products.filter(p => p.category === currentFilter);
+
+            filteredProducts.forEach(product => {
+                const productCard = createProductCard(product);
+                productsGrid.appendChild(productCard);
+            });
+        }
+
+        // Filter products
+        function filterProducts(category) {
+            loadingSpinner.classList.remove('hidden');
+            setTimeout(() => {
+                loadProducts();
+                loadingSpinner.classList.add('hidden');
+            }, 500);
+        }
+
+        // Create product card
+        function createProductCard(product) {
+            const card = document.createElement('div');
+            card.className = 'product-card bg-white rounded-lg shadow-md overflow-hidden group cursor-pointer';
+            card.innerHTML = `
+                <div class="relative overflow-hidden">
+                    <img src="${product.image}" alt="${product.alt}" class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300">
+                    <div class="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded text-sm">
+                        ${product.category}
+                    </div>
+                </div>
+                <div class="p-4">
+                    <h3 class="font-semibold text-lg mb-2">${product.name}</h3>
+                    <div class="flex items-center mb-2">
+                        ${generateStars(product.rating)}
+                        <span class="text-sm text-gray-600 ml-2">${product.rating}</span>
+                    </div>
+                    <p class="text-2xl font-bold text-blue-600 mb-4">$${product.price}</p>
+                    <div class="flex justify-between items-center">
+                        <button class="view-details-btn px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors" data-id="${product.id}">
+                            Details
+                        </button>
+                        <button class="add-to-cart-btn px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors" data-id="${product.id}">
+                            <i class="fas fa-cart-plus"></i> Add to Cart
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add event listeners
+            card.querySelector('.view-details-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                showProductDetails(product.id);
+            });
+
+            card.querySelector('.add-to-cart-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                addToCart(product.id);
+            });
+
+            card.addEventListener('click', () => {
+                showProductDetails(product.id);
+            });
+
+            return card;
+        }
+
+        // Generate star ratings
+        function generateStars(rating) {
+            let stars = '';
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 !== 0;
+
+            for (let i = 0; i < fullStars; i++) {
+                stars += '<i class="fas fa-star text-yellow-400"></i>';
+            }
+
+            if (hasHalfStar) {
+                stars += '<i class="fas fa-star-half-alt text-yellow-400"></i>';
+            }
+
+            const emptyStars = 5 - Math.ceil(rating);
+            for (let i = 0; i < emptyStars; i++) {
+                stars += '<i class="far fa-star text-yellow-400"></i>';
+            }
+
+            return stars;
+        }
+
+        // Show product details
+        function showProductDetails(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+
+            modalContent.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <img src="${product.image}" alt="${product.alt}" class="w-full rounded-lg">
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold mb-4">${product.name}</h2>
+                        <div class="flex items-center mb-4">
+                            ${generateStars(product.rating)}
+                            <span class="text-lg text-gray-600 ml-2">${product.rating} (${Math.floor(product.rating * 10)} reviews)</span>
+                        </div>
+                        <p class="text-4xl font-bold text-blue-600 mb-6">$${product.price}</p>
+                        <p class="text-gray-700 mb-6">${product.description}</p>
+                        <div class="mb-6">
+                            <span class="text-sm text-gray-600">Category: </span>
+                            <span class="text-sm font-semibold capitalize">${product.category}</span>
+                        </div>
+                        <div class="mb-6">
+                            <span class="text-sm text-gray-600">In Stock: </span>
+                            <span class="text-sm font-semibold">${product.stock} items</span>
+                        </div>
+                        <button class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors mb-4 add-to-cart-modal" data-id="${product.id}">
+                            <i class="fas fa-cart-plus me-2"></i> Add to Cart
+                        </button>
+                        <button class="w-full border border-blue-600 text-blue-600 py-3 rounded-lg hover:bg-blue-50 transition-colors">
+                            <i class="fas fa-heart me-2"></i> Add to Wishlist
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add event listener for modal add to cart
+            modalContent.querySelector('.add-to-cart-modal').addEventListener('click', () => {
+                addToCart(product.id);
+                closeProductModal();
+            });
+
+            productModal.classList.add('show');
+            productModal.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        // Close product modal
+        function closeProductModal() {
+            productModal.classList.remove('show');
+            productModal.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        // Add to cart
+        function addToCart(productId) {
+            if (!currentUser) {
+                showToast('Please login to add items to cart', 'warning');
+                openAuthModal();
+                return;
+            }
+
+            const product = products.find(p => p.id === productId);
+            const existingItem = cart.find(item => item.id === productId);
+
+            if (existingItem) {
+                if (existingItem.quantity >= product.stock) {
+                    showToast('Maximum stock reached for this item', 'warning');
+                    return;
+                }
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    ...product,
+                    quantity: 1
+                });
+            }
+
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartCount();
+            showToast('Item added to cart successfully!', 'success');
+            updateCartItems();
+        }
+
+        // Update cart count
+        function updateCartCount() {
+            const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+            cartCount.textContent = totalItems;
+        }
+
+        // Toggle cart sidebar
+        function toggleCart() {
+            if (cartSidebar.classList.contains('translate-x-full')) {
+                updateCartItems();
+                cartSidebar.classList.remove('translate-x-full');
+            } else {
+                cartSidebar.classList.add('translate-x-full');
+            }
+        }
+
+        // Update cart items
+        function updateCartItems() {
+            cartItems.innerHTML = '';
+            
+            if (cart.length === 0) {
+                cartItems.innerHTML = `
+                    <div class="text-center py-8">
+                        <i class="fas fa-shopping-cart text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">Your cart is empty</p>
+                    </div>
+                `;
+                checkoutBtn.disabled = true;
+                cartTotal.textContent = '$0.00';
+                return;
+            }
+
+            checkoutBtn.disabled = false;
+            let total = 0;
+
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+
+                const cartItem = document.createElement('div');
+                cartItem.className = 'cart-item flex items-center justify-between p-4 border-b';
+                cartItem.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        <img src="${item.image}" alt="${item.alt}" class="w-16 h-16 object-cover rounded">
+                        <div>
+                            <h4 class="font-semibold">${item.name}</h4>
+                            <p class="text-blue-600 font-semibold">$${item.price}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="decrease-quantity w-8 h-8 bg-gray-200 rounded" data-id="${item.id}">-</button>
+                        <span class="quantity">${item.quantity}</span>
+                        <button class="increase-quantity w-8 h-8 bg-gray-200 rounded" data-id="${item.id}">+</button>
+                        <button class="remove-item w-8 h-8 bg-red-100 text-red-600 rounded ml-2" data-id="${item.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+
+                cartItems.appendChild(cartItem);
+
+                // Add event listeners
+                cartItem.querySelector('.increase-quantity').addEventListener('click', () => {
+                    const product = products.find(p => p.id === item.id);
+                    if (item.quantity < product.stock) {
+                        item.quantity++;
+                        localStorage.setItem('cart', JSON.stringify(cart));
+                        updateCartItems();
+                        updateCartCount();
+                    } else {
+                        showToast('Maximum stock reached for this item', 'warning');
+                    }
+                });
+
+                cartItem.querySelector('.decrease-quantity').addEventListener('click', () => {
+                    if (item.quantity > 1) {
+                        item.quantity--;
+                    } else {
+                        removeFromCart(item.id);
+                        return;
+                    }
+                    localStorage.setItem('cart', JSON.stringify(cart));
+                    updateCartItems();
+                    updateCartCount();
+                });
+
+                cartItem.querySelector('.remove-item').addEventListener('click', () => {
+                    removeFromCart(item.id);
+                });
+            });
+
+            cartTotal.textContent = `$${total.toFixed(2)}`;
+        }
+
+        // Remove from cart
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            updateCartCount();
+            updateCartItems();
+            showToast('Item removed from cart', 'info');
+        }
+
+        // Check user status
+        function checkUserStatus() {
+            if (currentUser) {
+                loginBtn.innerHTML = `<i class="fas fa-user me-2"></i>${currentUser.name}`;
+                loginBtn.classList.remove('bg-blue-600');
+                loginBtn.classList.add('bg-green-600');
+            }
+        }
+
+        // Open auth modal
+        function openAuthModal() {
+            authModal.classList.add('show');
+            authModal.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        // Close auth modal
+        function closeAuthModalHandler() {
+            authModal.classList.remove('show');
+            authModal.classList.add('opacity-0', 'pointer-events-none');
+            registerFields.classList.add('hidden');
+            authModalTitle.textContent = 'Login';
+            authForm.reset();
+        }
+
+        // Toggle auth mode
+        function toggleAuthMode() {
+            if (registerFields.classList.contains('hidden')) {
+                registerFields.classList.remove('hidden');
+                authModalTitle.textContent = 'Register';
+                authForm.querySelector('button[type="submit"]').textContent = 'Register';
+            } else {
+                registerFields.classList.add('hidden');
+                authModalTitle.textContent = 'Login';
+                authForm.querySelector('button[type="submit"]').textContent = 'Login';
+            }
+        }
+
+        // Handle auth submit
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const isRegister = !registerFields.classList.contains('hidden');
+            const email = authForm.querySelector('input[type="email"]').value;
+            const password = authForm.querySelector('input[type="password"]').value;
+            
+            if (isRegister) {
+                const name = authForm.querySelector('input[type="text"]').value;
+                if (!name || !email || !password) {
+                    showToast('Please fill all fields', 'error');
+                    return;
+                }
+                
+                // Simulate registration
+                currentUser = { name, email };
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                showToast('Registration successful!', 'success');
+            } else {
+                // Simulate login
+                if (!email || !password) {
+                    showToast('Please enter email and password', 'error');
+                    return;
+                }
+                
+                currentUser = { name: email.split('@')[0], email };
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                showToast('Login successful!', 'success');
+            }
+            
+            checkUserStatus();
+            closeAuthModalHandler();
+        }
+
+        // Handle checkout
+        function handleCheckout() {
+            if (cart.length === 0) {
+                showToast('Your cart is empty', 'warning');
+                return;
+            }
+
+            if (!currentUser) {
+                showToast('Please login to checkout', 'warning');
+                openAuthModal();
+                return;
+            }
+
+            // Simulate order processing
+            showToast('Processing your order...', 'info');
+            
+            setTimeout(() => {
+                // Create order
+                const order = {
+                    id: Date.now(),
+                    userId: currentUser.email,
+                    items: cart,
+                    total: cart.reduce((total, item) => total + (item.price * item.quantity), 0),
+                    date: new Date().toISOString(),
+                    status: 'processing'
+                };
+
+                // Save order to localStorage (simulating database)
+                const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                orders.push(order);
+                localStorage.setItem('orders', JSON.stringify(orders));
+
+                // Clear cart
+                cart = [];
+                localStorage.setItem('cart', JSON.stringify(cart));
+                updateCartCount();
+                updateCartItems();
+
+                showToast('Order placed successfully! Thank you for your purchase.', 'success');
+                toggleCart();
+            }, 2000);
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const types = {
+                success: 'bg-green-600',
+                error: 'bg-red-600',
+                warning: 'bg-yellow-600',
+                info: 'bg-blue-600'
+            };
+
+            toast.textContent = message;
+            toast.className = `toast ${types[type] || types.info}`;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
+
+
